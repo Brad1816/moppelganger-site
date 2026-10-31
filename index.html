@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Moppelgänger</title>
+<meta name="description" content="Moppelgänger: a co-op night-shift horror game. Clean the tower with up to 4 friends while each of your realities slowly drifts apart.">
+<meta property="og:title" content="Moppelgänger: We agree you were here.">
+<meta property="og:description" content="Co-op night-shift horror. Clean the tower. Stay together. Don't trust who comes back.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://moppelganger.com/">
+<meta name="theme-color" content="#0b0d0c">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%230b0d0c'/%3E%3Cpath d='M18 10 L46 10 L42 40 L22 40 Z' fill='%23e8c547'/%3E%3Crect x='30' y='40' width='4' height='16' fill='%23d9e4cf'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0d0c; --bg2:#121614; --panel:#161b18; --line:#2a322d;
+    --ink:#d9e4cf; --dim:#8b9a88; --faint:#55625a;
+    --caution:#e8c547; --red:#c8483a; --tube:#eaf7e0;
+    --mono:"Courier Prime", "Courier New", ui-monospace, monospace;
+    --head:"Anton", Impact, "Arial Narrow", sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 var(--mono);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  a{color:var(--caution)}
+  ::selection{background:var(--caution);color:#000}
+
+  /* CRT / PSX grain */
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:50;
+    background:repeating-linear-gradient(to bottom,rgba(255,255,255,.025) 0 1px,transparent 1px 3px);mix-blend-mode:overlay}
+  body::after{content:"";position:fixed;inset:-50%;pointer-events:none;z-index:49;opacity:.06;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    animation:grain 1s steps(4) infinite}
+  @keyframes grain{0%{transform:translate(0,0)}25%{transform:translate(-3%,2%)}50%{transform:translate(2%,-3%)}75%{transform:translate(-2%,-1%)}}
+
+  .wrap{max-width:1040px;margin:0 auto;padding:0 22px}
+
+  /* top bar */
+  .bar{position:sticky;top:0;z-index:40;background:rgba(11,13,12,.92);backdrop-filter:blur(4px);border-bottom:1px solid var(--line);font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim)}
+  .bar .wrap{display:flex;gap:18px;justify-content:space-between;align-items:center;min-height:44px;flex-wrap:wrap}
+  .bar b{color:var(--ink);font-weight:700}
+  .bar .stat{display:flex;gap:18px}
+  .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--caution);margin-right:7px;vertical-align:1px;box-shadow:0 0 8px var(--caution)}
+
+  /* hero */
+  .hero{position:relative;min-height:88vh;display:flex;align-items:center;overflow:hidden;
+    background:
+      radial-gradient(ellipse 60% 40% at 50% -5%, rgba(234,247,224,.16), transparent 70%),
+      linear-gradient(to bottom, transparent 60%, var(--bg)),
+      repeating-linear-gradient(90deg, transparent 0 118px, rgba(255,255,255,.025) 118px 120px);}
+  .tube{position:absolute;top:0;left:50%;width:min(520px,70vw);height:10px;transform:translateX(-50%);background:var(--tube);box-shadow:0 0 30px 8px rgba(234,247,224,.35),0 0 120px 30px rgba(234,247,224,.12);border-radius:0 0 3px 3px}
+  .tube.flicker{animation:flick 6s infinite}
+  @keyframes flick{0%,91%,100%{opacity:1}92%{opacity:.2}93%{opacity:1}95%{opacity:.4}96%{opacity:1}}
+  .hero .wrap{position:relative;padding-top:80px;padding-bottom:80px;width:100%}
+  .kicker{color:var(--caution);text-transform:uppercase;letter-spacing:.2em;font-size:14px;margin:0 0 14px}
+  h1{font-family:var(--head);font-weight:400;font-size:clamp(54px,12vw,150px);line-height:.9;margin:0;letter-spacing:.01em;text-transform:uppercase;position:relative;display:inline-block}
+  h1 .ghost{position:absolute;inset:0;color:transparent;-webkit-text-stroke:1px rgba(200,72,58,.7);transform:translate(0,0);opacity:0;pointer-events:none;transition:transform .2s, opacity .2s}
+  body[data-drift="2"] h1 .ghost,body[data-drift="3"] h1 .ghost{opacity:1;transform:translate(4px,-2px)}
+  body[data-drift="3"] h1 .ghost{transform:translate(9px,3px)}
+  .tagline{font-size:clamp(20px,3vw,28px);margin:22px 0 10px;font-style:italic}
+  .pitch{max-width:600px;color:var(--dim);margin:0 0 34px}
+  .ctas{display:flex;gap:14px;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;gap:10px;padding:14px 22px;font:700 15px var(--mono);text-transform:uppercase;letter-spacing:.08em;text-decoration:none;border:2px solid var(--caution);color:#000;background:var(--caution);cursor:pointer}
+  .btn.ghostbtn{background:transparent;color:var(--caution)}
+  .btn[aria-disabled="true"]{cursor:default;opacity:.85}
+  .btn small{font-weight:400;opacity:.75;text-transform:none;letter-spacing:0}
+
+  /* wet floor sign */
+  .sign{position:absolute;right:max(22px,6vw);bottom:70px;width:150px;opacity:.95;transform:rotate(4deg)}
+  @media (max-width:820px){.sign{display:none}}
+
+  section{padding:90px 0;border-top:1px solid var(--line)}
+  h2{font-family:var(--head);font-weight:400;text-transform:uppercase;font-size:clamp(34px,5.5vw,56px);line-height:1;margin:0 0 12px;letter-spacing:.01em}
+  .lede{color:var(--dim);max-width:640px;margin:0 0 40px}
+
+  /* memo */
+  .memo{background:#e9e4d4;color:#1b1a16;max-width:760px;padding:38px clamp(22px,5vw,54px) 44px;box-shadow:0 30px 60px rgba(0,0,0,.5);transform:rotate(-.6deg);position:relative;
+    background-image:repeating-linear-gradient(to bottom,transparent 0 31px,rgba(60,80,120,.12) 31px 32px)}
+  .memo::before{content:"";position:absolute;top:-14px;left:46%;width:90px;height:28px;background:rgba(232,197,71,.55);transform:rotate(-3deg)}
+  .memo .co{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #1b1a16;padding-bottom:8px;margin-bottom:16px;gap:12px;flex-wrap:wrap}
+  .memo .co strong{font-size:18px;letter-spacing:.12em}
+  .memo .co span{font-size:13px}
+  .memo dl{display:grid;grid-template-columns:70px 1fr;gap:2px 10px;margin:0 0 20px;font-size:15px}
+  .memo dt{font-weight:700}
+  .memo dd{margin:0}
+  .memo ol{padding-left:22px;margin:0 0 20px}
+  .memo li{margin:6px 0}
+  .memo .sig{margin-top:26px;font-style:italic}
+  .stamp{position:absolute;right:28px;top:110px;border:3px solid var(--red);color:var(--red);padding:4px 12px;font-weight:700;letter-spacing:.15em;transform:rotate(12deg);opacity:.8;font-size:15px}
+  @media (max-width:560px){.stamp{top:auto;bottom:18px;right:18px}}
+  .redact{background:#1b1a16;color:#1b1a16;padding:0 3px;user-select:none}
+
+  /* cards */
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px}
+  .card{background:var(--panel);border:1px solid var(--line);padding:26px 24px 28px;position:relative}
+  .card .n{font-family:var(--head);color:var(--caution);font-size:15px;letter-spacing:.15em}
+  .card h3{font-family:var(--head);font-weight:400;text-transform:uppercase;font-size:28px;margin:6px 0 10px;letter-spacing:.02em}
+  .card p{margin:0;color:var(--dim);font-size:16px}
+
+  /* compare */
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:20px}
+  @media (max-width:700px){.split{grid-template-columns:1fr}}
+  .view{border:1px solid var(--line);background:var(--bg2);padding:20px 22px}
+  .view .who{font-size:13px;text-transform:uppercase;letter-spacing:.12em;color:var(--dim);margin-bottom:10px}
+  .view ul{list-style:none;padding:0;margin:0}
+  .view li{padding:8px 0;border-bottom:1px dashed var(--line);font-size:16px}
+  .view li:last-child{border:0}
+  .view .off{color:var(--red)}
+
+  /* specs */
+  .specs{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line)}
+  @media (max-width:700px){.specs{grid-template-columns:1fr 1fr}}
+  @media (max-width:420px){.bar .wrap>div:first-child{display:none}.bar .wrap{justify-content:flex-end}}
+  .specs div{padding:20px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .specs b{display:block;font-family:var(--head);font-weight:400;font-size:26px;text-transform:uppercase;color:var(--ink)}
+  .specs span{color:var(--dim);font-size:15px}
+
+  /* lore */
+  .lore{display:grid;grid-template-columns:1.3fr .7fr;gap:40px;align-items:start}
+  @media (max-width:760px){.lore{grid-template-columns:1fr}}
+  .lore p{color:var(--dim)}
+  .lore p strong{color:var(--ink)}
+  .panel{background:#1c1f1d;border:2px solid #39413b;border-radius:8px;padding:22px;max-width:240px;margin:0 auto;box-shadow:inset 0 0 20px rgba(0,0,0,.6)}
+  .panel .disp{background:#050605;color:#e85a3e;font:700 30px var(--mono);text-align:center;padding:8px;margin-bottom:18px;border:1px solid #000;letter-spacing:.1em;text-shadow:0 0 8px rgba(232,90,62,.7)}
+  .panel .btns{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;justify-items:center}
+  .panel button{width:54px;height:54px;border-radius:50%;border:2px solid #4c554e;background:radial-gradient(circle at 40% 35%,#3a413c,#202522);color:var(--ink);font:700 17px var(--mono);cursor:pointer}
+  .panel button.lit{border-color:var(--caution);color:var(--caution);box-shadow:0 0 12px rgba(232,197,71,.5)}
+  .panel button[hidden]{display:none}
+  .panel .note{font-size:13px;color:var(--dim);text-align:center;margin-top:16px;min-height:2.6em}
+
+  footer{border-top:1px solid var(--line);padding:50px 0 70px;color:var(--faint);font-size:14px}
+  footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+  .cta-end{text-align:center}
+  .cta-end .ctas{justify-content:center}
+
+  /* drift helpers */
+  [data-alt]{transition:color .4s}
+  .drifted{color:var(--red) !important}
+  @media (prefers-reduced-motion:reduce){
+    body::after,.tube.flicker{animation:none}
+    html{scroll-behavior:auto}
+  }
+</style>
+</head>
+<body data-drift="0">
+
+<div class="bar">
+  <div class="wrap">
+    <div><span class="dot"></span>Brightline Facility Services · Night Crew</div>
+    <div class="stat">
+      <span>Shift <b id="clock">11:00 PM</b></span>
+      <span>Crew on shift <b id="crew">4</b></span>
+    </div>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="tube flicker" aria-hidden="true"></div>
+  <div class="wrap">
+    <p class="kicker">Co-op night-shift horror · 1–4 players</p>
+    <h1>Moppelgänger<span class="ghost" aria-hidden="true">Moppelgänger</span></h1>
+    <p class="tagline" data-alt="We agree you were there.">We agree you were here.</p>
+    <p class="pitch">You and your friends clean an office tower from 11 PM to 6 AM. Every night, the building drifts a little further out of agreement, and so does each of you. What you see isn't what your friend sees. And the one standing next to you might not be them.</p>
+    <div class="ctas">
+      <span class="btn" aria-disabled="true">Steam page <small>coming soon</small></span>
+      <a class="btn ghostbtn" href="#orientation">Read your orientation</a>
+    </div>
+  </div>
+  <svg class="sign" viewBox="0 0 120 170" aria-hidden="true">
+    <path d="M30 6 h60 l26 158 h-14 l-22-138 h-40 l-22 138 h-14 z" fill="#e8c547" stroke="#1a1a12" stroke-width="2"/>
+    <rect x="40" y="38" width="40" height="5" fill="#1a1a12"/>
+    <path d="M60 60 l18 32 h-36 z" fill="none" stroke="#1a1a12" stroke-width="4"/>
+    <rect x="58" y="70" width="4" height="12" fill="#1a1a12"/><rect x="58" y="85" width="4" height="4" fill="#1a1a12"/>
+    <text x="60" y="114" text-anchor="middle" font-family="Anton, Impact, sans-serif" font-size="14" fill="#1a1a12">CAUTION</text>
+    <text x="60" y="131" text-anchor="middle" font-family="Anton, Impact, sans-serif" font-size="11" fill="#1a1a12">WET FLOOR</text>
+  </svg>
+</header>
+
+<section id="orientation">
+  <div class="wrap">
+    <h2>Your first week</h2>
+    <p class="lede">Every new hire gets the same memo. Most of it is about mops.</p>
+
+    <article class="memo">
+      <div class="stamp" aria-hidden="true">NIGHT CREW</div>
+      <div class="co"><strong>BRIGHTLINE</strong><span>Facility Services · Est. 1989</span></div>
+      <dl>
+        <dt>TO:</dt><dd>New night crew, Concord Tower</dd>
+        <dt>FROM:</dt><dd data-alt="Dennis Kell (Floor 13)">Dennis Kell, Night Supervisor</dd>
+        <dt>RE:</dt><dd>Orientation, Mon–Fri</dd>
+      </dl>
+      <p>Welcome aboard. Shifts run 11 PM to 6 AM. You'll ride the service elevator up from the basement locker room each night and work one floor.</p>
+      <ol>
+        <li>Mop spills. Empty trash. Replace dead bulbs. Every job pays.</li>
+        <li>Meet the nightly quota. The crew shares one wallet. Miss it and you're fired.</li>
+        <li><b data-alt="Split up. You'll cover more ground.">Stay together.</b> Keep the lights on and the floors clean.</li>
+        <li>If a coworker seems off, use the UV flashlight. Don't ask them about it.</li>
+        <li>If a hallway seems longer than it was, turn around.</li>
+        <li data-alt="The 13th floor is on tonight's dispatch.">There is no 13th floor.</li>
+      </ol>
+      <p>Coffee is in the break room. Paychecks are Friday.</p>
+      <p class="sig">— D.K.<br><span style="font-style:normal;font-size:14px">Night messages: ext. <span class="redact">0013</span></span></p>
+    </article>
+  </div>
+</section>
+
+<section id="game">
+  <div class="wrap">
+    <h2>The job</h2>
+    <p class="lede">It starts as a cleaning game. That's the point.</p>
+    <div class="cards">
+      <div class="card">
+        <div class="n">01</div>
+        <h3>Clean the floor</h3>
+        <p>Scrub up spills and footprints, haul trash and swap out dying lights. Every shift is a freshly generated floor, so no night plays the same way twice.</p>
+      </div>
+      <div class="card">
+        <div class="n">02</div>
+        <h3>Drift apart</h3>
+        <p>Darkness, mess and being alone push you out of sync. Posters change, doors move, hallways stretch. Only for you, though. Your friends see the normal building.</p>
+      </div>
+      <div class="card">
+        <div class="n">03</div>
+        <h3>Don't trust who comes back</h3>
+        <p>Drift too far and you get folded into a hallway that isn't there. Something takes your place in the crew. It walks like you and talks with your voice.</p>
+      </div>
+    </div>
+
+    <div class="split" aria-label="Two players, same moment">
+      <div class="view">
+        <div class="who">You · 3:12 AM</div>
+        <ul>
+          <li>Hallway, east wing. Lights on.</li>
+          <li>Mike is mopping next to you.</li>
+          <li>Mike says "this floor's almost done."</li>
+          <li>The exit sign is right there.</li>
+        </ul>
+      </div>
+      <div class="view">
+        <div class="who">Mike · 3:12 AM</div>
+        <ul>
+          <li>Hallway, east wing. <span class="off">It keeps going.</span></li>
+          <li><span class="off">Nobody else is here.</span></li>
+          <li>He's yelling into the walkie. You can't hear it.</li>
+          <li><span class="off">The exit sign is getting further away.</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>On shift</h2>
+    <p class="lede">What's in the build right now.</p>
+    <div class="specs">
+      <div><b>1–4 players</b><span>Steam friends lobbies or LAN</span></div>
+      <div><b>Solo crew</b><span>AI coworkers. Some of them aren't.</span></div>
+      <div><b>Proximity voice</b><span>Walls muffle. Walkies don't.</span></div>
+      <div><b>New floor nightly</b><span>Procedural layouts and anomalies</span></div>
+      <div><b>5-night week</b><span>Quotas, a shop, getting fired</span></div>
+      <div><b>1998</b><span>Lo-fi PSX look, fluorescent hum</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="tower">
+  <div class="wrap lore">
+    <div>
+      <h2>Concord Tower</h2>
+      <p><strong>Built 1979. Night cleaning contracted to Brightline since 1989.</strong> The tower stays the tower as long as the people inside it agree it does. In the daytime, that's easy.</p>
+      <p>The night crews have a word for the things that come back from the long hallways. They started calling them moppelgängers as a joke. The basement logbook shows the joke going sour around 1991, the same year a supervisor went upstairs and didn't come down.</p>
+      <p>The elevator panel skips from 12 to 14. Nobody on the crew has ever asked why. Not out loud.</p>
+    </div>
+    <div class="panel" role="group" aria-label="Elevator panel">
+      <div class="disp" id="disp">B</div>
+      <div class="btns">
+        <button type="button" data-f="14">14</button><button type="button" data-f="15">15</button>
+        <button type="button" data-f="12">12</button><button type="button" data-f="13" hidden>13</button>
+        <button type="button" data-f="10">10</button><button type="button" data-f="11">11</button>
+        <button type="button" data-f="1">1</button><button type="button" data-f="B">B</button>
+      </div>
+      <div class="note" id="note">Service elevator. Crew use only.</div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-end">
+  <div class="wrap">
+    <h2>Clocking in soon</h2>
+    <p class="lede" style="margin-left:auto;margin-right:auto">Moppelgänger is in development. The Steam page and wishlists are coming. Bring three friends you trust.</p>
+    <div class="ctas"><span class="btn" aria-disabled="true">Wishlist on Steam <small>coming soon</small></span></div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Moppelgänger. A game in development.</span>
+    <span>Concord Tower and Brightline Facility Services are fictional.</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var clockEl = document.getElementById('clock');
+  var crewEl = document.getElementById('crew');
+  var body = document.body;
+
+  // Shift clock: 1 game minute per real second, 11:00 PM -> 6:00 AM (420 min), then holds.
+  var start = Date.now();
+  function gameMinutes(){ return Math.min(420, Math.floor((Date.now()-start)/1000)); }
+  function fmt(m){
+    var t = (23*60 + m) % 1440, h = Math.floor(t/60), mm = t%60;
+    var ap = h >= 12 ? 'PM' : 'AM'; var h12 = h%12 || 12;
+    return h12 + ':' + (mm<10?'0':'') + mm + ' ' + ap;
+  }
+  // Drift level rises with time on page and with scrolling past the fold
+  var scrolled = 0;
+  window.addEventListener('scroll', function(){ scrolled = Math.max(scrolled, window.scrollY); }, {passive:true});
+  function drift(){
+    var m = gameMinutes();
+    var d = 0;
+    if (m > 45 || scrolled > 1600) d = 1;
+    if (m > 120) d = 2;
+    if (m > 240) d = 3;
+    return d;
+  }
+
+  // Text that changes only while you're not looking at it
+  var alts = [].slice.call(document.querySelectorAll('[data-alt]'));
+  var visible = new Map();
+  if ('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(es){
+      es.forEach(function(e){ visible.set(e.target, e.isIntersecting); });
+    });
+    alts.forEach(function(el){ visible.set(el, true); io.observe(el); });
+  }
+  function maybeSwap(d){
+    if (d < 1) return;
+    alts.forEach(function(el){
+      if (visible.get(el) !== false) return;          // only swap when off-screen
+      if (Math.random() > 0.25 + d*0.1) return;
+      if (!el.dataset.orig) el.dataset.orig = el.textContent;
+      var showingAlt = el.dataset.state === 'alt';
+      // at low drift, things mostly drift back; at high drift they stick
+      if (showingAlt && Math.random() < (d >= 3 ? 0.1 : 0.6)){
+        el.textContent = el.dataset.orig; el.dataset.state = ''; el.classList.remove('drifted');
+      } else if (!showingAlt){
+        el.textContent = el.dataset.alt; el.dataset.state = 'alt'; el.classList.toggle('drifted', d >= 2);
+      }
+    });
+  }
+
+  var panel13 = document.querySelector('[data-f="13"]');
+  function tick(){
+    var d = drift();
+    body.setAttribute('data-drift', d);
+    clockEl.textContent = fmt(gameMinutes());
+    // crew count lies, more often later in the night
+    var lie = d >= 1 && Math.random() < 0.08 * d;
+    crewEl.textContent = lie ? '5' : '4';
+    maybeSwap(d);
+    if (d >= 2) panel13.hidden = false;
+  }
+  tick();
+  setInterval(tick, reduce ? 3000 : 1000);
+
+  // Elevator panel
+  var disp = document.getElementById('disp'), note = document.getElementById('note');
+  var lines = {
+    'B':'Basement. Locker room, break room, dispatch.',
+    '1':'Lobby. Security went home at 10.',
+    '10':'Accounting. The carpet is always damp.',
+    '11':'Legal. Someone left a radio on.',
+    '12':'Records. Dispatch says this floor was finished last night.',
+    '14':'Marketing. Why does it say 14?',
+    '15':'Executive. Badge required.'
+  };
+  document.querySelectorAll('.panel button').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('.panel button').forEach(function(x){x.classList.remove('lit');});
+      b.classList.add('lit');
+      var f = b.dataset.f;
+      disp.textContent = f;
+      if (f === '13'){
+        note.textContent = 'This floor is not on tonight’s dispatch.';
+        setTimeout(function(){ b.hidden = true; b.classList.remove('lit'); disp.textContent = '12'; }, 1800);
+      } else {
+        note.textContent = lines[f];
+      }
+    });
+  });
+
+  // Quick-drift for the curious: press 1, 3 on the keyboard
+  var keys = '';
+  document.addEventListener('keydown', function(e){
+    keys = (keys + e.key).slice(-2);
+    if (keys === '13'){ start -= 300*1000; scrolled = 99999; tick(); }
+  });
+})();
+</script>
+</body>
+</html>
