@@ -135,6 +135,9 @@
   footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
   .cta-end{text-align:center}
   .cta-end .ctas{justify-content:center}
+  .socials{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin-top:28px}
+  .socials a{color:var(--dim);text-decoration:none;border:1px solid var(--line);padding:8px 16px;font-size:14px;text-transform:uppercase;letter-spacing:.1em}
+  .socials a:hover,.socials a:focus-visible{color:var(--caution);border-color:var(--caution)}
 
   /* drift helpers */
   [data-alt]{transition:color .4s}
@@ -165,7 +168,7 @@
     <p class="tagline" data-alt="We agree you were there.">We agree you were here.</p>
     <p class="pitch">You and your friends clean an office tower from 11 PM to 6 AM. Every night, the building drifts a little further out of agreement, and so does each of you. What you see isn't what your friend sees. And the one standing next to you might not be them.</p>
     <div class="ctas">
-      <span class="btn" aria-disabled="true">Steam page <small>coming soon</small></span>
+      <a class="btn" href="https://discord.gg/Q2WkBA5NZ" target="_blank" rel="noopener">Join the Discord</a>
       <a class="btn ghostbtn" href="#orientation">Read your orientation</a>
     </div>
   </div>
@@ -291,8 +294,18 @@
 <section class="cta-end">
   <div class="wrap">
     <h2>Clocking in soon</h2>
-    <p class="lede" style="margin-left:auto;margin-right:auto">Moppelgänger is in development. The Steam page and wishlists are coming. Bring three friends you trust.</p>
-    <div class="ctas"><span class="btn" aria-disabled="true">Wishlist on Steam <small>coming soon</small></span></div>
+    <p class="lede" style="margin-left:auto;margin-right:auto">Moppelgänger is in development. The Steam page and wishlists are coming. Join the Discord for playtests and devlogs, and bring three friends you trust.</p>
+    <div class="ctas">
+      <a class="btn" href="https://discord.gg/Q2WkBA5NZ" target="_blank" rel="noopener">Join the Discord</a>
+      <span class="btn ghostbtn" aria-disabled="true">Steam page <small>coming soon</small></span>
+    </div>
+    <nav class="socials" aria-label="Moppelgänger on social media">
+      <a href="https://www.youtube.com/@moppelganger" target="_blank" rel="noopener">YouTube</a>
+      <a href="https://www.tiktok.com/@moppelganger" target="_blank" rel="noopener">TikTok</a>
+      <a href="https://x.com/moppelganger" target="_blank" rel="noopener">X</a>
+      <a href="https://www.instagram.com/moppelgangergame" target="_blank" rel="noopener">Instagram</a>
+      <a href="https://discord.gg/Q2WkBA5NZ" target="_blank" rel="noopener">Discord</a>
+    </nav>
   </div>
 </section>
 
